@@ -1,290 +1,1254 @@
-import React, { useState, useEffect, useRef } from 'react';
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การทดลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย - ลูกตุ้ม</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-class Pendulum {
-  constructor(length = 1.0, mass = 1.0, initialAngleDeg = 30.0, g = 9.81, dt = 0.02) {
-    this.length = length;
-    this.mass = mass;
-    this.g = g;
-    this.dt = dt;
-    this.initialAngle = initialAngleDeg * Math.PI / 180;
-    this.angle = this.initialAngle;
-    this.angularVelocity = 0.0;
-    this.time = 0.0;
-    this.position = 0.0;
-    this.velocity = 0.0;
-    this.acceleration = 0.0;
-    this.oscillationCount = 0;
-    this.lastZeroCrossing = 0;
-    this.measuredPeriod = 0;
-  }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
 
-  updateParameters(length = null, mass = null, initialAngleDeg = null, g = null) {
-    if (length !== null) this.length = length;
-    if (mass !== null) this.mass = mass;
-    if (initialAngleDeg !== null) this.initialAngle = initialAngleDeg * Math.PI / 180;
-    if (g !== null) this.g = g;
-    this.resetSimulation();
-  }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
 
-  resetSimulation() {
-    this.angle = this.initialAngle;
-    this.angularVelocity = 0.0;
-    this.time = 0.0;
-    this.oscillationCount = 0;
-    this.lastZeroCrossing = 0;
-    this.measuredPeriod = 0;
-    this.updatePhysicsValues();
-  }
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+        }
 
-  step() {
-    const prevAngle = this.angle;
-    const angularAcceleration = -(this.g / this.length) * Math.sin(this.angle);
-    this.angularVelocity += angularAcceleration * this.dt;
-    this.angle += this.angularVelocity * this.dt;
-    this.time += this.dt;
+        .header h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
 
-    if (prevAngle > 0 && this.angle <= 0 || prevAngle < 0 && this.angle >= 0) {
-      if (this.lastZeroCrossing > 0) {
-        this.measuredPeriod = (this.time - this.lastZeroCrossing) * 2;
-        this.oscillationCount++;
-      }
-      this.lastZeroCrossing = this.time;
-    }
+        .header p {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            opacity: 0.9;
+        }
 
-    this.updatePhysicsValues();
-  }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 15px;
+        }
 
-  updatePhysicsValues() {
-    this.position = this.length * Math.sin(this.angle);
-    this.velocity = this.length * this.angularVelocity;
-    this.acceleration = -(this.g / this.length) * this.length * Math.sin(this.angle);
-  }
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
 
-  getCartesianCoordinates() {
-    const x = this.length * Math.sin(this.angle);
-    const y = this.length * Math.cos(this.angle);
-    return [x, y];
-  }
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
 
-  getTheoreticalPeriod() {
-    return 2 * Math.PI * Math.sqrt(this.length / this.g);
-  }
+        .student-info, .experiment-controls {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
 
-  getTheoreticalFrequency() {
-    return 1 / this.getTheoreticalPeriod();
-  }
-}
+        .student-info {
+            border-left: 4px solid #4facfe;
+        }
 
-const PendulumLab = () => {
-  const [studentInfo, setStudentInfo] = useState({
-    firstName: '',
-    lastName: '',
-    grade: '',
-    number: ''
-  });
+        .experiment-controls {
+            border-left: 4px solid #28a745;
+        }
 
-  const [length, setLength] = useState(1.0);
-  const [angle, setAngle] = useState(15.0);
-  const [gravity, setGravity] = useState(9.81);
-  const [mass, setMass] = useState(0.5);
-  const [running, setRunning] = useState(false);
-  const [simulationSpeed, setSimulationSpeed] = useState(1.0);
-  const [experimentData, setExperimentData] = useState([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingStartTime, setRecordingStartTime] = useState(0);
-  const [isReportOpen, setIsReportOpen] = useState(false);
+        .section-title {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+        }
 
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
-  const pendulumRef = useRef(new Pendulum(length, mass, angle, gravity));
+        .form-group {
+            margin-bottom: 12px;
+        }
 
-  useEffect(() => {
-    pendulumRef.current.updateParameters(length, mass, angle, gravity);
-    drawPendulum();
-  }, [length, angle, gravity, mass]);
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: #555;
+            font-weight: 500;
+            font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+        }
 
-  useEffect(() => {
-    if (running) {
-      animationRef.current = requestAnimationFrame(animate);
-    } else {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    }
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [running]);
+        .form-group input[type="text"], 
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 12px 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: clamp(14px, 3vw, 16px);
+            outline: none;
+        }
 
-  const drawPendulum = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
 
-    const ctx = canvas.getContext('2d');
-    const scale = 80;
-    const centerX = canvas.width / 2;
-    const pivotY = 30;
+        .slider-group {
+            margin-bottom: 18px;
+        }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        .slider-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+        }
 
-    // พื้นหลัง
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#87CEEB');
-    gradient.addColorStop(1, '#98FB98');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+        .slider-value {
+            display: inline-block;
+            background: #e3f2fd;
+            padding: 6px 12px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: bold;
+            color: #1976d2;
+            min-width: 60px;
+            text-align: center;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+        }
 
-    // เส้นกริด
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < canvas.width; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.height);
-      ctx.stroke();
-    }
-    for (let i = 0; i < canvas.height; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(canvas.width, i);
-      ctx.stroke();
-    }
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            touch-action: manipulation;
+        }
 
-    const [x, y] = pendulumRef.current.getCartesianCoordinates();
-    const scaledX = x * scale;
-    const scaledY = y * scale;
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4facfe;
+            cursor: pointer;
+        }
 
-    // จุดแขวน
-    ctx.beginPath();
-    ctx.arc(centerX, pivotY, 6, 0, Math.PI * 2);
-    ctx.fillStyle = '#2d3748';
-    ctx.fill();
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4facfe;
+            cursor: pointer;
+            border: none;
+        }
 
-    // สายแขวน
-    ctx.beginPath();
-    ctx.moveTo(centerX, pivotY);
-    ctx.lineTo(centerX + scaledX, pivotY + scaledY);
-    ctx.strokeStyle = '#8b4513';
-    ctx.lineWidth = 4;
-    ctx.stroke();
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
 
-    // ลูกตุ้ม
-    const bobRadius = 12;
-    ctx.beginPath();
-    ctx.arc(centerX + scaledX, pivotY + scaledY, bobRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#8B4513';
-    ctx.fill();
-    ctx.strokeStyle = '#654321';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+        .btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: clamp(12px, 2.5vw, 14px);
+            font-weight: 500;
+            cursor: pointer;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            touch-action: manipulation;
+            transition: all 0.3s ease;
+        }
 
-    // เส้นสเกล
-    ctx.strokeStyle = '#4a5568';
-    ctx.lineWidth = 1;
-    const scaleLength = 80;
-    ctx.beginPath();
-    ctx.moveTo(centerX - scaleLength, canvas.height - 15);
-    ctx.lineTo(centerX + scaleLength, canvas.height - 15);
-    ctx.stroke();
+        .btn-start {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
 
-    // ข้อความสเกล
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#4a5568';
-    const halfScale = scaleLength / 2;
-    ctx.fillText('-1.0m', centerX - scaleLength, canvas.height - 5);
-    ctx.fillText('-0.5m', centerX - halfScale, canvas.height - 5);
-    ctx.fillText('0', centerX, canvas.height - 5);
-    ctx.fillText('0.5m', centerX + halfScale, canvas.height - 5);
-    ctx.fillText('1.0m', centerX + scaleLength, canvas.height - 5);
-  };
+        .btn-stop {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
 
-  const animate = () => {
-    if (!running) return;
+        .btn-reset {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+        }
 
-    const steps = Math.ceil(simulationSpeed * 2);
-    for (let i = 0; i < steps; i++) {
-      pendulumRef.current.step();
-    }
+        .btn-report {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            width: 100%;
+            margin-top: 15px;
+        }
 
-    if (isRecording) {
-      const currentTime = pendulumRef.current.time - recordingStartTime;
-      const newDataPoint = {
-        time: currentTime,
-        angle: pendulumRef.current.angle * 180 / Math.PI,
-        position: pendulumRef.current.position,
-        velocity: pendulumRef.current.velocity,
-        acceleration: pendulumRef.current.acceleration,
-        energy: 0.5 * mass * Math.pow(pendulumRef.current.velocity, 2) + mass * gravity * (length - length * Math.cos(pendulumRef.current.angle))
-      };
-      setExperimentData(prev => [...prev, newDataPoint]);
-    }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
 
-    drawPendulum();
-    animationRef.current = requestAnimationFrame(animate);
-  };
+        .btn:disabled {
+            background: #9CA3AF !important;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-  const startSimulation = () => {
-    setRunning(true);
-    if (!isRecording) {
-      setIsRecording(true);
-      setRecordingStartTime(pendulumRef.current.time);
-      setExperimentData([]);
-    }
-  };
+        .simulation-area {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
 
-  const stopSimulation = () => {
-    setRunning(false);
-    setIsRecording(false);
-  };
+        .canvas-container {
+            position: relative;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            width: 100%;
+        }
 
-  const resetSimulation = () => {
-    setRunning(false);
-    setIsRecording(false);
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    pendulumRef.current.resetSimulation();
-    setExperimentData([]);
-    drawPendulum();
-  };
+        #pendulumCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+        }
 
-  const copyReportData = () => {
-    const pendulum = pendulumRef.current;
-    const currentDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const currentTime = new Date().toLocaleTimeString('th-TH');
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
 
-    let tableData = 'ลำดับ\tเวลา (s)\tมุม (°)\tตำแหน่ง (m)\tความเร็ว (m/s)\tความเร่ง (m/s²)\tพลังงาน (J)\n';
+        .status-card {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #dc3545;
+            text-align: center;
+        }
+
+        .status-card h4 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+        }
+
+        .status-value {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        .results-section {
+            margin: 20px 15px 0 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .results-title {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .result-card {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-label {
+            display: block;
+            color: #666;
+            margin-bottom: 4px;
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+        }
+
+        .result-value {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            font-weight: bold;
+            color: #333;
+        }
+
+        .credit {
+            background: white;
+            text-align: center;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            color: #666;
+            font-style: italic;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            border-radius: 25px;
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(3px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+        }
+
+        .close {
+            color: white;
+            font-size: clamp(28px, 5vw, 35px);
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            padding: 5px;
+        }
+
+        .modal-body {
+            padding: 20px;
+            line-height: 1.6;
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+        }
+
+        .report-section {
+            margin-bottom: 25px;
+        }
+
+        .report-section-title {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+
+        .info-label {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 4px;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            font-weight: bold;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+        }
+
+        .report-table th {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 10px 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .report-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .report-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .equation-box {
+            background: #f0f8ff;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            color: #2980b9;
+            margin: 8px 0;
+        }
+
+        .copy-btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: clamp(14px, 2.5vw, 16px);
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← กลับเมนู</a>
     
-    if (experimentData.length === 0) {
-      for (let i = 0; i <= 20; i++) {
-        const t = i * 0.1;
-        const angleRad = angle * Math.PI / 180 * Math.cos(Math.sqrt(gravity / length) * t);
-        const pos = length * Math.sin(angleRad);
-        const vel = -length * angle * Math.PI / 180 * Math.sqrt(gravity / length) * Math.sin(Math.sqrt(gravity / length) * t);
-        const acc = -gravity * Math.sin(angleRad);
-        const energy = 0.5 * mass * vel * vel + mass * gravity * (length - length * Math.cos(angleRad));
-        
-        tableData += `${(i + 1)}\t${t.toFixed(3)}\t${(angleRad * 180 / Math.PI).toFixed(3)}\t${pos.toFixed(3)}\t${vel.toFixed(3)}\t${acc.toFixed(3)}\t${energy.toFixed(3)}\n`;
-      }
-    } else {
-      experimentData.forEach((data, index) => {
-        tableData += `${(index + 1)}\t${data.time.toFixed(3)}\t${data.angle.toFixed(3)}\t${data.position.toFixed(3)}\t${data.velocity.toFixed(3)}\t${data.acceleration.toFixed(3)}\t${data.energy.toFixed(3)}\n`;
-      });
-    }
+    <div class="container">
+        <div class="header">
+            <h1>🔬 การทดลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</h1>
+            <p>ศึกษาการเคลื่อนที่ของลูกตุ้ม</p>
+        </div>
 
-    const reportText = `รายงานการทดลองการเคลื่อนที่แบบฮาร์โมนิกอย่างง่าย - ลูกตุ้ม
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <!-- Student Info -->
+                <div class="student-info">
+                    <h3 class="section-title">📝 ข้อมูลผู้ทดลอง</h3>
+                    <div class="form-group">
+                        <label>ชื่อ-นามสกุล:</label>
+                        <input type="text" id="fullName" placeholder="กรอกชื่อ-นามสกุล">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ระดับชั้น:</label>
+                            <input type="text" id="grade" placeholder="เช่น ม.4/1">
+                        </div>
+                        <div class="form-group">
+                            <label>เลขที่:</label>
+                            <input type="number" id="studentNumber" placeholder="เลขที่">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experiment Controls -->
+                <div class="experiment-controls">
+                    <h3 class="section-title">⚙️ การควบคุมการทดลอง</h3>
+                    
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            ความยาวสาย (m): <span class="slider-value" id="lengthValue">1.0</span>
+                        </label>
+                        <input type="range" class="slider" id="lengthSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            มุมเริ่มต้น (°): <span class="slider-value" id="angleValue">15</span>
+                        </label>
+                        <input type="range" class="slider" id="angleSlider" min="5" max="45" step="1" value="15">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            แรงโน้มถ่วง (N/kg): <span class="slider-value" id="gravityValue">9.8</span>
+                        </label>
+                        <input type="range" class="slider" id="gravitySlider" min="5.0" max="15.0" step="0.1" value="9.81">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            มวล (kg): <span class="slider-value" id="massValue">0.5</span>
+                        </label>
+                        <input type="range" class="slider" id="massSlider" min="0.1" max="2.0" step="0.1" value="0.5">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            ความเร็วการจำลอง: <span class="slider-value" id="speedValue">ปกติ</span>
+                        </label>
+                        <input type="range" class="slider" id="speedSlider" min="0.25" max="2.0" step="0.25" value="1.0">
+                    </div>
+
+                    <div class="button-grid">
+                        <button class="btn btn-start" id="startBtn">▶️ เริ่ม</button>
+                        <button class="btn btn-stop" id="stopBtn" disabled>⏸️ หยุด</button>
+                        <button class="btn btn-reset" id="resetBtn">🔄 รีเซ็ต</button>
+                    </div>
+
+                    <button class="btn btn-report" id="reportBtn">📊 แสดงข้อมูลการทดลอง</button>
+                </div>
+            </div>
+
+            <!-- Simulation Area -->
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="pendulumCanvas" width="600" height="400"></canvas>
+                </div>
+
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h4>ตำแหน่ง (m)</h4>
+                        <div class="status-value" id="positionValue">0.000</div>
+                    </div>
+                    <div class="status-card">
+                        <h4>ความเร็ว (m/s)</h4>
+                        <div class="status-value" id="velocityValue">0.000</div>
+                    </div>
+                    <div class="status-card">
+                        <h4>ความเร่ง (m/s²)</h4>
+                        <div class="status-value" id="accelerationValue">0.000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section">
+            <h3 class="results-title">📊 ผลการทดลอง</h3>
+            <div class="results-grid">
+                <div class="result-card">
+                    <label class="result-label">ความถี่ (Hz)</label>
+                    <div class="result-value" id="frequencyResult">0.000</div>
+                </div>
+                <div class="result-card">
+                    <label class="result-label">คาบ (s)</label>
+                    <div class="result-value" id="periodResult">0.000</div>
+                </div>
+                <div class="result-card">
+                    <label class="result-label">ความถี่เชิงมุม (rad/s)</label>
+                    <div class="result-value" id="angularFreqResult">0.000</div>
+                </div>
+                <div class="result-card">
+                    <label class="result-label">ความเร่งสูงสุด (m/s²)</label>
+                    <div class="result-value" id="maxAccelResult">0.000</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Section -->
+        <div class="credit">
+            โดยครูขจรศรี สุทธสังข์ โรงเรียนลองวิทยา จ.แพร่
+        </div>
+    </div>
+
+    <!-- Modal for Report -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📋 รายงานผลการทดลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</h2>
+                <span class="close" id="closeModal">×</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Report content will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pendulum class
+        class Pendulum {
+            constructor(length = 1.0, mass = 1.0, initialAngleDeg = 30.0, g = 9.81, dt = 0.02) {
+                this.length = length;
+                this.mass = mass;
+                this.g = g;
+                this.dt = dt;
+                this.initialAngle = initialAngleDeg * Math.PI / 180;
+                this.angle = this.initialAngle;
+                this.angularVelocity = 0.0;
+                this.time = 0.0;
+                this.position = 0.0;
+                this.velocity = 0.0;
+                this.acceleration = 0.0;
+                this.oscillationCount = 0;
+                this.lastZeroCrossing = 0;
+                this.measuredPeriod = 0;
+            }
+
+            updateParameters(length = null, mass = null, initialAngleDeg = null, g = null) {
+                if (length !== null) this.length = length;
+                if (mass !== null) this.mass = mass;
+                if (initialAngleDeg !== null) this.initialAngle = initialAngleDeg * Math.PI / 180;
+                if (g !== null) this.g = g;
+                this.resetSimulation();
+            }
+
+            resetSimulation() {
+                this.angle = this.initialAngle;
+                this.angularVelocity = 0.0;
+                this.time = 0.0;
+                this.oscillationCount = 0;
+                this.lastZeroCrossing = 0;
+                this.measuredPeriod = 0;
+                this.updatePhysicsValues();
+            }
+
+            step() {
+                const prevAngle = this.angle;
+                const angularAcceleration = -(this.g / this.length) * Math.sin(this.angle);
+                this.angularVelocity += angularAcceleration * this.dt;
+                this.angle += this.angularVelocity * this.dt;
+                this.time += this.dt;
+
+                if (prevAngle > 0 && this.angle <= 0 || prevAngle < 0 && this.angle >= 0) {
+                    if (this.lastZeroCrossing > 0) {
+                        this.measuredPeriod = (this.time - this.lastZeroCrossing) * 2;
+                        this.oscillationCount++;
+                    }
+                    this.lastZeroCrossing = this.time;
+                }
+
+                this.updatePhysicsValues();
+            }
+
+            updatePhysicsValues() {
+                this.position = this.length * Math.sin(this.angle);
+                this.velocity = this.length * this.angularVelocity;
+                this.acceleration = -(this.g / this.length) * this.length * Math.sin(this.angle);
+            }
+
+            getCartesianCoordinates() {
+                const x = this.length * Math.sin(this.angle);
+                const y = this.length * Math.cos(this.angle);
+                return [x, y];
+            }
+
+            getTheoreticalPeriod() {
+                return 2 * Math.PI * Math.sqrt(this.length / this.g);
+            }
+
+            getTheoreticalFrequency() {
+                return 1 / this.getTheoreticalPeriod();
+            }
+        }
+
+        // Global variables
+        let pendulum = new Pendulum(1.0, 0.5, 15.0, 9.81);
+        let isRunning = false;
+        let animationId = null;
+        let simulationSpeed = 1.0;
+        let experimentData = [];
+        let isRecording = false;
+        let recordingStartTime = 0;
+
+        // Canvas and context
+        const canvas = document.getElementById('pendulumCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get elements
+        const lengthSlider = document.getElementById('lengthSlider');
+        const angleSlider = document.getElementById('angleSlider');
+        const gravitySlider = document.getElementById('gravitySlider');
+        const massSlider = document.getElementById('massSlider');
+        const speedSlider = document.getElementById('speedSlider');
+
+        const lengthValue = document.getElementById('lengthValue');
+        const angleValue = document.getElementById('angleValue');
+        const gravityValue = document.getElementById('gravityValue');
+        const massValue = document.getElementById('massValue');
+        const speedValue = document.getElementById('speedValue');
+
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const reportBtn = document.getElementById('reportBtn');
+
+        const positionValue = document.getElementById('positionValue');
+        const velocityValue = document.getElementById('velocityValue');
+        const accelerationValue = document.getElementById('accelerationValue');
+
+        const frequencyResult = document.getElementById('frequencyResult');
+        const periodResult = document.getElementById('periodResult');
+        const angularFreqResult = document.getElementById('angularFreqResult');
+        const maxAccelResult = document.getElementById('maxAccelResult');
+
+        // Event listeners for sliders
+        lengthSlider.addEventListener('input', function() {
+            const length = parseFloat(this.value);
+            lengthValue.textContent = length.toFixed(1);
+            pendulum.updateParameters(length, null, null, null);
+            updateResults();
+            if (!isRunning) drawPendulum();
+        });
+
+        angleSlider.addEventListener('input', function() {
+            const angle = parseFloat(this.value);
+            angleValue.textContent = angle;
+            pendulum.updateParameters(null, null, angle, null);
+            updateResults();
+            if (!isRunning) drawPendulum();
+        });
+
+        gravitySlider.addEventListener('input', function() {
+            const gravity = parseFloat(this.value);
+            gravityValue.textContent = gravity.toFixed(1);
+            pendulum.updateParameters(null, null, null, gravity);
+            updateResults();
+        });
+
+        massSlider.addEventListener('input', function() {
+            const mass = parseFloat(this.value);
+            massValue.textContent = mass.toFixed(1);
+            pendulum.updateParameters(null, mass, null, null);
+            updateResults();
+            if (!isRunning) drawPendulum();
+        });
+
+        speedSlider.addEventListener('input', function() {
+            simulationSpeed = parseFloat(this.value);
+            const speedNames = {
+                0.25: 'ช้ามาก', 0.5: 'ช้า', 0.75: 'ค่อนข้างช้า', 1.0: 'ปกติ',
+                1.25: 'ค่อนข้างเร็ว', 1.5: 'เร็ว', 1.75: 'เร็วมาก', 2.0: 'เร็วสุด'
+            };
+            speedValue.textContent = speedNames[simulationSpeed] || 'ปกติ';
+        });
+
+        // Button event listeners
+        startBtn.addEventListener('click', startSimulation);
+        stopBtn.addEventListener('click', stopSimulation);
+        resetBtn.addEventListener('click', resetSimulation);
+        reportBtn.addEventListener('click', showReport);
+
+        function startSimulation() {
+            isRunning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            // Disable sliders during simulation
+            lengthSlider.disabled = true;
+            angleSlider.disabled = true;
+            gravitySlider.disabled = true;
+            massSlider.disabled = true;
+            
+            if (!isRecording) {
+                isRecording = true;
+                recordingStartTime = pendulum.time;
+                experimentData = [];
+            }
+            
+            animate();
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+            isRecording = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            // Enable sliders
+            lengthSlider.disabled = false;
+            angleSlider.disabled = false;
+            gravitySlider.disabled = false;
+            massSlider.disabled = false;
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+            pendulum.resetSimulation();
+            experimentData = [];
+            updateDisplay();
+            drawPendulum();
+        }
+
+        function animate() {
+            if (!isRunning) return;
+
+            const steps = Math.ceil(simulationSpeed * 2);
+            for (let i = 0; i < steps; i++) {
+                pendulum.step();
+            }
+
+            if (isRecording) {
+                const currentTime = pendulum.time - recordingStartTime;
+                const newDataPoint = {
+                    time: currentTime,
+                    angle: pendulum.angle * 180 / Math.PI,
+                    position: pendulum.position,
+                    velocity: pendulum.velocity,
+                    acceleration: pendulum.acceleration,
+                    energy: 0.5 * pendulum.mass * Math.pow(pendulum.velocity, 2) + 
+                            pendulum.mass * pendulum.g * (pendulum.length - pendulum.length * Math.cos(pendulum.angle))
+                };
+                experimentData.push(newDataPoint);
+            }
+
+            updateDisplay();
+            drawPendulum();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function drawPendulum() {
+            const scale = 80;
+            const centerX = canvas.width / 2;
+            const pivotY = 30;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grid lines
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            const [x, y] = pendulum.getCartesianCoordinates();
+            const scaledX = x * scale;
+            const scaledY = y * scale;
+
+            // Pivot point
+            ctx.beginPath();
+            ctx.arc(centerX, pivotY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#2d3748';
+            ctx.fill();
+
+            // Pendulum string
+            ctx.beginPath();
+            ctx.moveTo(centerX, pivotY);
+            ctx.lineTo(centerX + scaledX, pivotY + scaledY);
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Pendulum bob
+            const bobRadius = 12;
+            ctx.beginPath();
+            ctx.arc(centerX + scaledX, pivotY + scaledY, bobRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#8B4513';
+            ctx.fill();
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Scale line
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 1;
+            const scaleLength = 80;
+            ctx.beginPath();
+            ctx.moveTo(centerX - scaleLength, canvas.height - 15);
+            ctx.lineTo(centerX + scaleLength, canvas.height - 15);
+            ctx.stroke();
+
+            // Scale labels
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#4a5568';
+            const halfScale = scaleLength / 2;
+            ctx.fillText('-1.0m', centerX - scaleLength, canvas.height - 5);
+            ctx.fillText('-0.5m', centerX - halfScale, canvas.height - 5);
+            ctx.fillText('0', centerX, canvas.height - 5);
+            ctx.fillText('0.5m', centerX + halfScale, canvas.height - 5);
+            ctx.fillText('1.0m', centerX + scaleLength, canvas.height - 5);
+        }
+
+        function updateDisplay() {
+            positionValue.textContent = pendulum.position.toFixed(3);
+            velocityValue.textContent = pendulum.velocity.toFixed(3);
+            accelerationValue.textContent = pendulum.acceleration.toFixed(3);
+        }
+
+        function updateResults() {
+            const frequency = pendulum.getTheoreticalFrequency();
+            const period = pendulum.getTheoreticalPeriod();
+            const angularFreq = 2 * Math.PI * frequency;
+            const angle = parseFloat(angleSlider.value);
+            const gravity = parseFloat(gravitySlider.value);
+            const maxAccel = gravity * Math.sin(angle * Math.PI / 180);
+
+            frequencyResult.textContent = frequency.toFixed(3);
+            periodResult.textContent = period.toFixed(3);
+            angularFreqResult.textContent = angularFreq.toFixed(3);
+            maxAccelResult.textContent = maxAccel.toFixed(3);
+        }
+
+        function showReport() {
+            const fullName = document.getElementById('fullName').value;
+            const grade = document.getElementById('grade').value;
+            const studentNumber = document.getElementById('studentNumber').value;
+
+            if (!fullName && !grade && !studentNumber) {
+                alert('กรุณากรอกข้อมูลผู้ทดลองอย่างน้อย 1 ช่อง');
+                return;
+            }
+
+            generateReportContent();
+            document.getElementById('reportModal').classList.add('show');
+        }
+
+        function generateReportContent() {
+            const fullName = document.getElementById('fullName').value;
+            const grade = document.getElementById('grade').value;
+            const studentNumber = document.getElementById('studentNumber').value;
+            const length = parseFloat(lengthSlider.value);
+            const angle = parseFloat(angleSlider.value);
+            const gravity = parseFloat(gravitySlider.value);
+            const mass = parseFloat(massSlider.value);
+
+            const currentDate = new Date().toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const currentTime = new Date().toLocaleTimeString('th-TH');
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <!-- ข้อมูลผู้ทดลอง -->
+                <div class="report-section">
+                    <h3 class="report-section-title">📝 ข้อมูลผู้ทดลอง</h3>
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <span class="info-label">ชื่อ-นามสกุล:</span>
+                            ${fullName}
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">ระดับชั้น:</span>
+                            ${grade}
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">เลขที่:</span>
+                            ${studentNumber}
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">วันที่ทำการทดลอง:</span>
+                            ${currentDate}
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">เวลา:</span>
+                            ${currentTime}
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">หัวข้อการทดลอง:</span>
+                            ศึกษาการเคลื่อนที่ของลูกตุ้ม
+                        </div>
+                    </div>
+                </div>
+
+                <!-- พารามิเตอร์การทดลอง -->
+                <div class="report-section">
+                    <h3 class="report-section-title">⚙️ พารามิเตอร์การทดลอง</h3>
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <span class="info-label">ความยาวสาย (L):</span>
+                            ${length.toFixed(1)} เมตร
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">มุมเริ่มต้น (θ₀):</span>
+                            ${angle.toFixed(1)} องศา
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">แรงโน้มถ่วงโลก (g):</span>
+                            ${gravity.toFixed(2)} N/kg
+                        </div>
+                        <div class="info-card">
+                            <span class="info-label">มวลของลูกตุ้ม (m):</span>
+                            ${mass.toFixed(2)} กิโลกรัม
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ผลการคำนวณทางทฤษฎี -->
+                <div class="report-section">
+                    <h3 class="report-section-title">📊 ผลการคำนวณทางทฤษฎี</h3>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>รายการ</th>
+                                <th>ค่าทฤษฎี</th>
+                                <th>หน่วย</th>
+                                <th>สูตรที่ใช้</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>คาบการแกว่ง (T)</strong></td>
+                                <td>${pendulum.getTheoreticalPeriod().toFixed(4)}</td>
+                                <td>วินาที</td>
+                                <td>T = 2π√(L/g)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ความถี่ (f)</strong></td>
+                                <td>${pendulum.getTheoreticalFrequency().toFixed(4)}</td>
+                                <td>เฮิร์ต</td>
+                                <td>f = 1/T</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ความถี่เชิงมุม (ω)</strong></td>
+                                <td>${(2 * Math.PI * pendulum.getTheoreticalFrequency()).toFixed(4)}</td>
+                                <td>เรเดียน/วินาที</td>
+                                <td>ω = 2πf</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ความเร่งสูงสุด (a_max)</strong></td>
+                                <td>${(gravity * Math.sin(angle * Math.PI / 180)).toFixed(4)}</td>
+                                <td>เมตร/วินาที²</td>
+                                <td>a_max = g sin θ₀</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- สมการการเคลื่อนที่ -->
+                <div class="report-section">
+                    <h3 class="report-section-title">🧮 สมการการเคลื่อนที่</h3>
+                    <div class="equation-box">
+                        <h4 style="color: #2c3e50; margin-bottom: 12px; font-size: clamp(1rem, 2.5vw, 1.1rem);">
+                            สมการพื้นฐานของการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย
+                        </h4>
+                        <div class="equation">x(t) = A sin(ωt + φ)</div>
+                        <div class="equation">v(t) = Aω cos(ωt + φ)</div>
+                        <div class="equation">a(t) = -Aω² sin(ωt + φ)</div>
+                        <div class="equation">T = 2π√(L/g)</div>
+                        <div class="equation">f = 1/T = (1/2π)√(g/L)</div>
+                    </div>
+                </div>
+
+                ${experimentData.length > 0 ? generateExperimentDataSection() : generateNoDataSection()}
+
+                <!-- สรุปผลการทดลอง -->
+                <div class="report-section">
+                    <h3 class="report-section-title">📝 สรุปผลการทดลอง</h3>
+                    <p><strong>วัตถุประสงค์:</strong> เพื่อศึกษาการเคลื่อนที่แบบฮาร์โมนิกอย่างง่ายของลูกตุ้ม และการหาค่าคาบการแกว่ง</p>
+                    
+                    <p><strong>หลักการ:</strong> การเคลื่อนที่แบบฮาร์โมนิกอย่างง่ายของลูกตุ้มเกิดขึ้นเมื่อแรงที่กระทำต่อลูกตุ้มแปรผันตรงกับการกระจัดเชิงมุม โดยมีสมการ F = -mgsinθ</p>
+                    
+                    <p><strong>ผลการทดลอง:</strong></p>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>คาบการแกว่ง: ${pendulum.getTheoreticalPeriod().toFixed(3)} วินาที</li>
+                        <li>ความถี่ของการสั่น: ${pendulum.getTheoreticalFrequency().toFixed(3)} Hz</li>
+                        <li>ความถี่เชิงมุม: ${(2 * Math.PI * pendulum.getTheoreticalFrequency()).toFixed(3)} rad/s</li>
+                        <li>ความเร่งสูงสุด: ${(gravity * Math.sin(angle * Math.PI / 180)).toFixed(3)} m/s²</li>
+                    </ul>
+                    
+                    <p><strong>ข้อสังเกต:</strong></p>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>คาบการแกว่งของลูกตุ้มไม่ขึ้นอยู่กับมวลของลูกตุ้ม</li>
+                        <li>คาบการแกว่งจะเพิ่มขึ้นเมื่อความยาวของเชือกเพิ่มขึ้น</li>
+                        <li>คาบการแกว่งจะลดลงเมื่อแรงโน้มถ่วงโลกเพิ่มขึ้น</li>
+                        <li>สำหรับมุมเล็ก (&lt; 15°) สมการ T = 2π√(L/g) ใช้ได้อย่างแม่นยำ</li>
+                    </ul>
+                    
+                    <p><strong>สรุป:</strong> การทดลองแสดงให้เห็นว่าการเคลื่อนที่ของลูกตุ้มเป็นไปตามทฤษฎีการเคลื่อนที่แบบฮาร์โมนิกอย่างง่าย โดยคาบการแกว่งขึ้นอยู่กับความยาวของสายและแรงโน้มถ่วงเท่านั้น ไม่ขึ้นอยู่กับมวลของลูกตุ้ม</p>
+                </div>
+
+                <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #eee;">
+                    <button class="copy-btn" onclick="copyReportData()">📋 คัดลอกรายงาน</button>
+                </div>
+            `;
+        }
+
+        function generateExperimentDataSection() {
+            const filteredData = experimentData.filter((_, index) => index % 5 === 0).slice(0, 50);
+            
+            let tableRows = '';
+            filteredData.forEach((data, index) => {
+                tableRows += `
+                    <tr style="${index % 2 === 0 ? 'background-color: #f8f9fa;' : ''}">
+                        <td>${data.time.toFixed(3)}</td>
+                        <td>${data.angle.toFixed(2)}</td>
+                        <td>${data.position.toFixed(4)}</td>
+                        <td>${data.velocity.toFixed(4)}</td>
+                        <td>${data.acceleration.toFixed(4)}</td>
+                        <td>${data.energy.toFixed(4)}</td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="report-section">
+                    <h3 class="report-section-title">📈 ข้อมูลการทดลองจริง (Real-time Data)</h3>
+                    <p><strong>จำนวนจุดข้อมูล:</strong> ${experimentData.length} จุด</p>
+                    <p><strong>ระยะเวลาการทดลอง:</strong> ${experimentData.length > 0 ? experimentData[experimentData.length - 1].time.toFixed(2) : 0} วินาที</p>
+                    
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>เวลา (s)</th>
+                                <th>มุม (°)</th>
+                                <th>ตำแหน่ง (m)</th>
+                                <th>ความเร็ว (m/s)</th>
+                                <th>ความเร่ง (m/s²)</th>
+                                <th>พลังงาน (J)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                        <strong>หมายเหตุ:</strong> ตารางแสดงข้อมูลตัวอย่าง (ทุก 5 จุด) จากข้อมูลทั้งหมด ${experimentData.length} จุด
+                        สำหรับข้อมูลครบถ้วน กรุณาคัดลอกรายงาน
+                    </p>
+                </div>
+            `;
+        }
+
+        function generateNoDataSection() {
+            return `
+                <div class="report-section">
+                    <h3 class="report-section-title">📈 ข้อมูลการทดลองจริง</h3>
+                    <p style="color: #666; font-style: italic;">
+                        ยังไม่มีข้อมูลการทดลอง กรุณาเริ่มการจำลองเพื่อบันทึกข้อมูล
+                    </p>
+                </div>
+            `;
+        }
+
+        function copyReportData() {
+            const fullName = document.getElementById('fullName').value;
+            const grade = document.getElementById('grade').value;
+            const studentNumber = document.getElementById('studentNumber').value;
+            const length = parseFloat(lengthSlider.value);
+            const angle = parseFloat(angleSlider.value);
+            const gravity = parseFloat(gravitySlider.value);
+            const mass = parseFloat(massSlider.value);
+
+            const currentDate = new Date().toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const currentTime = new Date().toLocaleTimeString('th-TH');
+
+            let tableData = 'ลำดับ\tเวลา (s)\tมุม (°)\tตำแหน่ง (m)\tความเร็ว (m/s)\tความเร่ง (m/s²)\tพลังงาน (J)\n';
+            
+            if (experimentData.length === 0) {
+                for (let i = 0; i <= 20; i++) {
+                    const t = i * 0.1;
+                    const angleRad = angle * Math.PI / 180 * Math.cos(Math.sqrt(gravity / length) * t);
+                    const pos = length * Math.sin(angleRad);
+                    const vel = -length * angle * Math.PI / 180 * Math.sqrt(gravity / length) * Math.sin(Math.sqrt(gravity / length) * t);
+                    const acc = -gravity * Math.sin(angleRad);
+                    const energy = 0.5 * mass * vel * vel + mass * gravity * (length - length * Math.cos(angleRad));
+                    
+                    tableData += `${(i + 1)}\t${t.toFixed(3)}\t${(angleRad * 180 / Math.PI).toFixed(3)}\t${pos.toFixed(3)}\t${vel.toFixed(3)}\t${acc.toFixed(3)}\t${energy.toFixed(3)}\n`;
+                }
+            } else {
+                experimentData.forEach((data, index) => {
+                    tableData += `${(index + 1)}\t${data.time.toFixed(3)}\t${data.angle.toFixed(3)}\t${data.position.toFixed(3)}\t${data.velocity.toFixed(3)}\t${data.acceleration.toFixed(3)}\t${data.energy.toFixed(3)}\n`;
+                });
+            }
+
+            const reportText = `รายงานการทดลองการเคลื่อนที่แบบฮาร์โมนิกอย่างง่าย - ลูกตุ้ม
 
 ข้อมูลผู้ทดลอง:
-ชื่อ-นามสกุล: ${studentInfo.firstName} ${studentInfo.lastName}
-ระดับชั้น: ${studentInfo.grade}
-เลขที่: ${studentInfo.number}
+ชื่อ-นามสกุล: ${fullName}
+ระดับชั้น: ${grade}
+เลขที่: ${studentNumber}
 วันที่ทำการทดลอง: ${currentDate}
 เวลา: ${currentTime}
 หัวข้อการทดลอง: ศึกษาการเคลื่อนที่ของลูกตุ้ม
@@ -324,1497 +1288,44 @@ ${tableData}
 
 โดยครูขจรศรี สุทธสังข์ โรงเรียนลองวิทยา จ.แพร่`;
 
-    navigator.clipboard.writeText(reportText).then(() => {
-      alert('คัดลอกรายงานเรียบร้อยแล้ว!\nสามารถนำไปวางใน Microsoft Word ได้เลย');
-    }).catch(() => {
-      const textarea = document.createElement('textarea');
-      textarea.value = reportText;
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      textarea.style.top = '-9999px';
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      const success = document.execCommand('copy');
-      document.body.removeChild(textarea);
-      
-      if (success) {
-        alert('คัดลอกรายงานเรียบร้อยแล้ว!\nสามารถนำไปวางใน Microsoft Word ได้เลย');
-      } else {
-        alert('ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง');
-      }
-    });
-  };
-
-  const showReport = () => {
-    if (!studentInfo.firstName && !studentInfo.lastName && !studentInfo.grade && !studentInfo.number) {
-      alert('กรุณากรอกข้อมูลผู้ทดลองอย่างน้อย 1 ช่อง');
-      return;
-    }
-    setIsReportOpen(true);
-  };
-
-  const pendulum = pendulumRef.current;
-
-  return (
-    <div style={{
-      margin: 0,
-      padding: 0,
-      boxSizing: 'border-box',
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      minHeight: '100vh',
-      padding: '10px'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        background: 'rgba(255, 255, 255, 0.95)',
-        borderRadius: '15px',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-        overflow: 'hidden'
-      }}>
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-          color: 'white',
-          padding: '20px 15px',
-          textAlign: 'center'
-        }}>
-          <h1 style={{
-            fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-            marginBottom: '8px',
-            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.3)',
-            margin: 0
-          }}>
-            🔬 การทดลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย
-          </h1>
-          <p style={{
-            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-            opacity: 0.9,
-            margin: 0
-          }}>
-            ศึกษาการเคลื่อนที่ของลูกตุ้ม
-          </p>
-        </div>
-
-        {/* Main Content */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: window.innerWidth >= 1024 ? '1fr 2fr' : '1fr',
-          gap: '20px',
-          padding: '15px'
-        }}>
-          {/* Control Panel */}
-          <div style={{
-            background: '#f8f9fa',
-            borderRadius: '12px',
-            padding: '15px',
-            boxShadow: '0 3px 10px rgba(0, 0, 0, 0.08)'
-          }}>
-            {/* Student Info */}
-            <div style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '15px',
-              marginBottom: '20px',
-              borderLeft: '4px solid #4facfe'
-            }}>
-              <h3 style={{
-                color: '#333',
-                marginBottom: '12px',
-                fontSize: 'clamp(1rem, 3vw, 1.2rem)',
-                marginTop: 0
-              }}>
-                📝 ข้อมูลผู้ทดลอง
-              </h3>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '4px',
-                  color: '#555',
-                  fontWeight: '500',
-                  fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                }}>
-                  ชื่อ-นามสกุล:
-                </label>
-                <input
-                  style={{
-                    width: '100%',
-                    padding: '12px 10px',
-                    border: '2px solid #e1e5e9',
-                    borderRadius: '6px',
-                    fontSize: 'clamp(14px, 3vw, 16px)',
-                    outline: 'none'
-                  }}
-                  type="text"
-                  placeholder="กรอกชื่อ-นามสกุล"
-                  value={`${studentInfo.firstName} ${studentInfo.lastName}`}
-                  onChange={(e) => {
-                    const names = e.target.value.split(' ');
-                    setStudentInfo({
-                      ...studentInfo,
-                      firstName: names[0] || '',
-                      lastName: names.slice(1).join(' ') || ''
-                    });
-                  }}
-                />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '4px',
-                    color: '#555',
-                    fontWeight: '500',
-                    fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                  }}>
-                    ระดับชั้น:
-                  </label>
-                  <input
-                    style={{
-                      width: '100%',
-                      padding: '12px 10px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '6px',
-                      fontSize: 'clamp(14px, 3vw, 16px)',
-                      outline: 'none'
-                    }}
-                    type="text"
-                    placeholder="เช่น ม.4/1"
-                    value={studentInfo.grade}
-                    onChange={(e) => setStudentInfo({...studentInfo, grade: e.target.value})}
-                  />
-                </div>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '4px',
-                    color: '#555',
-                    fontWeight: '500',
-                    fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                  }}>
-                    เลขที่:
-                  </label>
-                  <input
-                    style={{
-                      width: '100%',
-                      padding: '12px 10px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '6px',
-                      fontSize: 'clamp(14px, 3vw, 16px)',
-                      outline: 'none'
-                    }}
-                    type="number"
-                    placeholder="เลขที่"
-                    value={studentInfo.number}
-                    onChange={(e) => setStudentInfo({...studentInfo, number: e.target.value})}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Experiment Controls */}
-            <div style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '15px',
-              borderLeft: '4px solid #28a745'
-            }}>
-              <h3 style={{
-                color: '#333',
-                marginBottom: '12px',
-                fontSize: 'clamp(1rem, 3vw, 1.2rem)',
-                marginTop: 0
-              }}>
-                ⚙️ การควบคุมการทดลอง
-              </h3>
-              
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#555',
-                  fontWeight: '500',
-                  fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                }}>
-                  ความยาวสาย (m): <span style={{
-                    display: 'inline-block',
-                    background: '#e3f2fd',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    marginLeft: '8px',
-                    fontWeight: 'bold',
-                    color: '#1976d2',
-                    minWidth: '60px',
-                    textAlign: 'center',
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                  }}>{length.toFixed(1)}</span>
-                </label>
-                <input
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    background: '#ddd',
-                    outline: 'none',
-                    WebkitAppearance: 'none',
-                    touchAction: 'manipulation'
-                  }}
-                  type="range"
-                  min="0.5"
-                  max="2.0"
-                  step="0.1"
-                  value={length}
-                  onChange={(e) => setLength(parseFloat(e.target.value))}
-                  disabled={running}
-                />
-              </div>
-
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#555',
-                  fontWeight: '500',
-                  fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                }}>
-                  มุมเริ่มต้น (°): <span style={{
-                    display: 'inline-block',
-                    background: '#e3f2fd',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    marginLeft: '8px',
-                    fontWeight: 'bold',
-                    color: '#1976d2',
-                    minWidth: '60px',
-                    textAlign: 'center',
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                  }}>{angle.toFixed(0)}</span>
-                </label>
-                <input
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    background: '#ddd',
-                    outline: 'none',
-                    WebkitAppearance: 'none',
-                    touchAction: 'manipulation'
-                  }}
-                  type="range"
-                  min="5"
-                  max="45"
-                  step="1"
-                  value={angle}
-                  onChange={(e) => setAngle(parseFloat(e.target.value))}
-                  disabled={running}
-                />
-              </div>
-
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#555',
-                  fontWeight: '500',
-                  fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                }}>
-                  แรงโน้มถ่วง (N/kg): <span style={{
-                    display: 'inline-block',
-                    background: '#e3f2fd',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    marginLeft: '8px',
-                    fontWeight: 'bold',
-                    color: '#1976d2',
-                    minWidth: '60px',
-                    textAlign: 'center',
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                  }}>{gravity.toFixed(1)}</span>
-                </label>
-                <input
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    background: '#ddd',
-                    outline: 'none',
-                    WebkitAppearance: 'none',
-                    touchAction: 'manipulation'
-                  }}
-                  type="range"
-                  min="5.0"
-                  max="15.0"
-                  step="0.1"
-                  value={gravity}
-                  onChange={(e) => setGravity(parseFloat(e.target.value))}
-                  disabled={running}
-                />
-              </div>
-
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#555',
-                  fontWeight: '500',
-                  fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                }}>
-                  มวล (kg): <span style={{
-                    display: 'inline-block',
-                    background: '#e3f2fd',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    marginLeft: '8px',
-                    fontWeight: 'bold',
-                    color: '#1976d2',
-                    minWidth: '60px',
-                    textAlign: 'center',
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                  }}>{mass.toFixed(1)}</span>
-                </label>
-                <input
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    background: '#ddd',
-                    outline: 'none',
-                    WebkitAppearance: 'none',
-                    touchAction: 'manipulation'
-                  }}
-                  type="range"
-                  min="0.1"
-                  max="2.0"
-                  step="0.1"
-                  value={mass}
-                  onChange={(e) => setMass(parseFloat(e.target.value))}
-                  disabled={running}
-                />
-              </div>
-
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#555',
-                  fontWeight: '500',
-                  fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)'
-                }}>
-                  ความเร็วการจำลอง: <span style={{
-                    display: 'inline-block',
-                    background: '#e3f2fd',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    marginLeft: '8px',
-                    fontWeight: 'bold',
-                    color: '#1976d2',
-                    minWidth: '60px',
-                    textAlign: 'center',
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                  }}>
-                    {simulationSpeed === 0.25 ? 'ช้ามาก' :
-                     simulationSpeed === 0.5 ? 'ช้า' :
-                     simulationSpeed === 0.75 ? 'ค่อนข้างช้า' :
-                     simulationSpeed === 1.0 ? 'ปกติ' :
-                     simulationSpeed === 1.25 ? 'ค่อนข้างเร็ว' :
-                     simulationSpeed === 1.5 ? 'เร็ว' :
-                     simulationSpeed === 1.75 ? 'เร็วมาก' :
-                     simulationSpeed === 2.0 ? 'เร็วสุด' : 'ปกติ'}
-                  </span>
-                </label>
-                <input
-                  style={{
-                    width: '100%',
-                    height: '8px',
-                    borderRadius: '4px',
-                    background: '#ddd',
-                    outline: 'none',
-                    WebkitAppearance: 'none',
-                    touchAction: 'manipulation'
-                  }}
-                  type="range"
-                  min="0.25"
-                  max="2.0"
-                  step="0.25"
-                  value={simulationSpeed}
-                  onChange={(e) => setSimulationSpeed(parseFloat(e.target.value))}
-                />
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '8px',
-                margin: '15px 0'
-              }}>
-                <button
-                  style={{
-                    padding: '12px 8px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: 'clamp(12px, 2.5vw, 14px)',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    background: running ? '#9CA3AF' : 'linear-gradient(135deg, #28a745, #20c997)',
-                    color: 'white',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    touchAction: 'manipulation'
-                  }}
-                  onClick={startSimulation}
-                  disabled={running}
-                >
-                  ▶️ เริ่ม
-                </button>
-                <button
-                  style={{
-                    padding: '12px 8px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: 'clamp(12px, 2.5vw, 14px)',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    background: !running ? '#9CA3AF' : 'linear-gradient(135deg, #6c757d, #495057)',
-                    color: 'white',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    touchAction: 'manipulation'
-                  }}
-                  onClick={stopSimulation}
-                  disabled={!running}
-                >
-                  ⏸️ หยุด
-                </button>
-                <button
-                  style={{
-                    padding: '12px 8px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: 'clamp(12px, 2.5vw, 14px)',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #ffc107, #fd7e14)',
-                    color: 'white',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    touchAction: 'manipulation'
-                  }}
-                  onClick={resetSimulation}
-                >
-                  🔄 รีเซ็ต
-                </button>
-              </div>
-
-              <button
-                style={{
-                  background: 'linear-gradient(135deg, #17a2b8, #138496)',
-                  color: 'white',
-                  marginTop: '15px',
-                  width: '100%',
-                  padding: '12px 8px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: 'clamp(12px, 2.5vw, 14px)',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  touchAction: 'manipulation'
-                }}
-                onClick={showReport}
-              >
-                📊 แสดงข้อมูลการทดลอง
-              </button>
-            </div>
-          </div>
-
-          {/* Simulation Area */}
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '15px',
-            boxShadow: '0 3px 10px rgba(0, 0, 0, 0.08)'
-          }}>
-            <div style={{
-              position: 'relative',
-              border: '2px solid #e1e5e9',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              marginBottom: '15px',
-              width: '100%'
-            }}>
-              <canvas
-                ref={canvasRef}
-                width={600}
-                height={400}
-                style={{
-                  display: 'block',
-                  background: 'linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%)',
-                  width: '100%',
-                  height: 'auto',
-                  maxWidth: '100%'
-                }}
-              />
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-              gap: '10px',
-              marginTop: '15px'
-            }}>
-              <div style={{
-                background: '#f8f9fa',
-                padding: '12px',
-                borderRadius: '6px',
-                borderLeft: '4px solid #dc3545',
-                textAlign: 'center'
-              }}>
-                <h4 style={{
-                  color: '#333',
-                  marginBottom: '8px',
-                  fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                  margin: '0 0 8px 0'
-                }}>
-                  ตำแหน่ง (m)
-                </h4>
-                <div style={{
-                  fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-                  fontWeight: 'bold',
-                  color: '#dc3545'
-                }}>
-                  {pendulum.position.toFixed(3)}
-                </div>
-              </div>
-              <div style={{
-                background: '#f8f9fa',
-                padding: '12px',
-                borderRadius: '6px',
-                borderLeft: '4px solid #dc3545',
-                textAlign: 'center'
-              }}>
-                <h4 style={{
-                  color: '#333',
-                  marginBottom: '8px',
-                  fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                  margin: '0 0 8px 0'
-                }}>
-                  ความเร็ว (m/s)
-                </h4>
-                <div style={{
-                  fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-                  fontWeight: 'bold',
-                  color: '#dc3545'
-                }}>
-                  {pendulum.velocity.toFixed(3)}
-                </div>
-              </div>
-              <div style={{
-                background: '#f8f9fa',
-                padding: '12px',
-                borderRadius: '6px',
-                borderLeft: '4px solid #dc3545',
-                textAlign: 'center'
-              }}>
-                <h4 style={{
-                  color: '#333',
-                  marginBottom: '8px',
-                  fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                  margin: '0 0 8px 0'
-                }}>
-                  ความเร่ง (m/s²)
-                </h4>
-                <div style={{
-                  fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-                  fontWeight: 'bold',
-                  color: '#dc3545'
-                }}>
-                  {pendulum.acceleration.toFixed(3)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Section */}
-        <div style={{
-          marginTop: '20px',
-          background: '#f8f9fa',
-          borderRadius: '12px',
-          padding: '15px',
-          margin: '20px 15px 0 15px'
-        }}>
-          <h3 style={{
-            color: '#333',
-            marginBottom: '15px',
-            textAlign: 'center',
-            fontSize: 'clamp(1rem, 3vw, 1.2rem)',
-            margin: '0 0 15px 0'
-          }}>
-            📊 ผลการทดลอง
-          </h3>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-            gap: '10px'
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
-            }}>
-              <label style={{
-                display: 'block',
-                color: '#666',
-                marginBottom: '4px',
-                fontSize: 'clamp(0.75rem, 2vw, 0.9rem)'
-              }}>
-                ความถี่ (Hz)
-              </label>
-              <div style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                fontWeight: 'bold',
-                color: '#333'
-              }}>
-                {pendulum.getTheoreticalFrequency().toFixed(3)}
-              </div>
-            </div>
-            <div style={{
-              background: 'white',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
-            }}>
-              <label style={{
-                display: 'block',
-                color: '#666',
-                marginBottom: '4px',
-                fontSize: 'clamp(0.75rem, 2vw, 0.9rem)'
-              }}>
-                คาบ (s)
-              </label>
-              <div style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                fontWeight: 'bold',
-                color: '#333'
-              }}>
-                {pendulum.getTheoreticalPeriod().toFixed(3)}
-              </div>
-            </div>
-            <div style={{
-              background: 'white',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
-            }}>
-              <label style={{
-                display: 'block',
-                color: '#666',
-                marginBottom: '4px',
-                fontSize: 'clamp(0.75rem, 2vw, 0.9rem)'
-              }}>
-                ความถี่เชิงมุม (rad/s)
-              </label>
-              <div style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                fontWeight: 'bold',
-                color: '#333'
-              }}>
-                {(2 * Math.PI * pendulum.getTheoreticalFrequency()).toFixed(3)}
-              </div>
-            </div>
-            <div style={{
-              background: 'white',
-              padding: '12px',
-              borderRadius: '6px',
-              textAlign: 'center',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)'
-            }}>
-              <label style={{
-                display: 'block',
-                color: '#666',
-                marginBottom: '4px',
-                fontSize: 'clamp(0.75rem, 2vw, 0.9rem)'
-              }}>
-                ความเร่งสูงสุด (m/s²)
-              </label>
-              <div style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                fontWeight: 'bold',
-                color: '#333'
-              }}>
-                {(gravity * Math.sin(angle * Math.PI / 180)).toFixed(3)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Credit Section */}
-        <div style={{
-          background: 'white',
-          textAlign: 'center',
-          padding: '15px',
-          margin: '15px',
-          borderRadius: '12px',
-          boxShadow: '0 3px 10px rgba(0, 0, 0, 0.08)',
-          color: '#666',
-          fontStyle: 'italic',
-          fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-        }}>
-          โดยครูขจรศรี สุทธสังข์ โรงเรียนลองวิทยา จ.แพร่
-        </div>
-      </div>
-
-      {/* Modal for Report */}
-      {isReportOpen && (
-        <div style={{
-          position: 'fixed',
-          zIndex: 1000,
-          left: 0,
-          top: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(3px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            margin: '2% auto',
-            padding: 0,
-            borderRadius: '12px',
-            width: '95%',
-            maxWidth: '900px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.3)'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              color: 'white',
-              padding: '15px 20px',
-              borderRadius: '12px 12px 0 0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h2 style={{
-                margin: 0,
-                fontSize: 'clamp(1.2rem, 3vw, 1.8rem)'
-              }}>
-                📋 รายงานผลการทดลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย
-              </h2>
-              <span
-                style={{
-                  color: 'white',
-                  fontSize: 'clamp(28px, 5vw, 35px)',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                  padding: '5px'
-                }}
-                onClick={() => setIsReportOpen(false)}
-              >
-                ×
-              </span>
-            </div>
-
-            <div style={{
-              padding: '20px',
-              lineHeight: 1.6,
-              fontSize: 'clamp(0.85rem, 2.5vw, 1rem)'
-            }}>
-              {/* ข้อมูลผู้ทดลอง */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{
-                  color: '#2c3e50',
-                  borderBottom: '3px solid #3498db',
-                  paddingBottom: '8px',
-                  marginBottom: '15px',
-                  fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                  margin: '0 0 15px 0'
-                }}>
-                  📝 ข้อมูลผู้ทดลอง
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '12px',
-                  marginBottom: '15px'
-                }}>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      ชื่อ-นามสกุล:
-                    </strong>
-                    {studentInfo.firstName} {studentInfo.lastName}
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      ระดับชั้น:
-                    </strong>
-                    {studentInfo.grade}
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      เลขที่:
-                    </strong>
-                    {studentInfo.number}
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      วันที่ทำการทดลอง:
-                    </strong>
-                    {new Date().toLocaleDateString('th-TH', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      เวลา:
-                    </strong>
-                    {new Date().toLocaleTimeString('th-TH')}
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      หัวข้อการทดลอง:
-                    </strong>
-                    ศึกษาการเคลื่อนที่ของลูกตุ้ม
-                  </div>
-                </div>
-              </div>
-
-              {/* พารามิเตอร์การทดลอง */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{
-                  color: '#2c3e50',
-                  borderBottom: '3px solid #3498db',
-                  paddingBottom: '8px',
-                  marginBottom: '15px',
-                  fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                  margin: '0 0 15px 0'
-                }}>
-                  ⚙️ พารามิเตอร์การทดลอง
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '12px',
-                  marginBottom: '15px'
-                }}>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      ความยาวสาย (L):
-                    </strong>
-                    {length.toFixed(1)} เมตร
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      มุมเริ่มต้น (θ₀):
-                    </strong>
-                    {angle.toFixed(1)} องศา
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      แรงโน้มถ่วงโลก (g):
-                    </strong>
-                    {gravity.toFixed(2)} N/kg
-                  </div>
-                  <div style={{
-                    background: '#f8f9fa',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    borderLeft: '4px solid #3498db'
-                  }}>
-                    <strong style={{
-                      color: '#2c3e50',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)'
-                    }}>
-                      มวลของลูกตุ้ม (m):
-                    </strong>
-                    {mass.toFixed(2)} กิโลกรัม
-                  </div>
-                </div>
-              </div>
-
-              {/* ผลการคำนวณทางทฤษฎี */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{
-                  color: '#2c3e50',
-                  borderBottom: '3px solid #3498db',
-                  paddingBottom: '8px',
-                  marginBottom: '15px',
-                  fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                  margin: '0 0 15px 0'
-                }}>
-                  📊 ผลการคำนวณทางทฤษฎี
-                </h3>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  margin: '15px 0',
-                  background: 'white',
-                  borderRadius: '6px',
-                  overflow: 'hidden',
-                  boxShadow: '0 3px 8px rgba(0, 0, 0, 0.1)',
-                  fontSize: 'clamp(0.75rem, 2vw, 0.9rem)'
-                }}>
-                  <thead>
-                    <tr>
-                      <th style={{
-                        background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                        color: 'white',
-                        padding: '10px 6px',
-                        textAlign: 'center',
-                        fontWeight: '600'
-                      }}>รายการ</th>
-                      <th style={{
-                        background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                        color: 'white',
-                        padding: '10px 6px',
-                        textAlign: 'center',
-                        fontWeight: '600'
-                      }}>ค่าทฤษฎี</th>
-                      <th style={{
-                        background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                        color: 'white',
-                        padding: '10px 6px',
-                        textAlign: 'center',
-                        fontWeight: '600'
-                      }}>หน่วย</th>
-                      <th style={{
-                        background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                        color: 'white',
-                        padding: '10px 6px',
-                        textAlign: 'center',
-                        fontWeight: '600'
-                      }}>สูตรที่ใช้</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ backgroundColor: '#f8f9fa' }}>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        <strong>คาบการแกว่ง (T)</strong>
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        {pendulum.getTheoreticalPeriod().toFixed(4)}
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        วินาที
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        T = 2π√(L/g)
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        <strong>ความถี่ (f)</strong>
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        {pendulum.getTheoreticalFrequency().toFixed(4)}
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        เฮิร์ต
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        f = 1/T
-                      </td>
-                    </tr>
-                    <tr style={{ backgroundColor: '#f8f9fa' }}>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        <strong>ความถี่เชิงมุม (ω)</strong>
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        {(2 * Math.PI * pendulum.getTheoreticalFrequency()).toFixed(4)}
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        เรเดียน/วินาที
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        ω = 2πf
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        <strong>ความเร่งสูงสุด (a_max)</strong>
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        {(gravity * Math.sin(angle * Math.PI / 180)).toFixed(4)}
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        เมตร/วินาที²
-                      </td>
-                      <td style={{
-                        padding: '8px 6px',
-                        textAlign: 'center',
-                        borderBottom: '1px solid #eee'
-                      }}>
-                        a_max = g sin θ₀
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* สมการการเคลื่อนที่ */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{
-                  color: '#2c3e50',
-                  borderBottom: '3px solid #3498db',
-                  paddingBottom: '8px',
-                  marginBottom: '15px',
-                  fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                  margin: '0 0 15px 0'
-                }}>
-                  🧮 สมการการเคลื่อนที่
-                </h3>
-                <div style={{
-                  background: '#f0f8ff',
-                  border: '2px solid #3498db',
-                  borderRadius: '8px',
-                  padding: '15px',
-                  margin: '15px 0',
-                  textAlign: 'center'
-                }}>
-                  <h4 style={{
-                    color: '#2c3e50',
-                    marginBottom: '12px',
-                    fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
-                    margin: '0 0 12px 0'
-                  }}>
-                    สมการพื้นฐานของการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย
-                  </h4>
-                  <div style={{
-                    fontFamily: "'Times New Roman', serif",
-                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                    color: '#2980b9',
-                    margin: '8px 0'
-                  }}>
-                    x(t) = A sin(ωt + φ)
-                  </div>
-                  <div style={{
-                    fontFamily: "'Times New Roman', serif",
-                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                    color: '#2980b9',
-                    margin: '8px 0'
-                  }}>
-                    v(t) = Aω cos(ωt + φ)
-                  </div>
-                  <div style={{
-                    fontFamily: "'Times New Roman', serif",
-                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                    color: '#2980b9',
-                    margin: '8px 0'
-                  }}>
-                    a(t) = -Aω² sin(ωt + φ)
-                  </div>
-                  <div style={{
-                    fontFamily: "'Times New Roman', serif",
-                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                    color: '#2980b9',
-                    margin: '8px 0'
-                  }}>
-                    T = 2π√(L/g)
-                  </div>
-                  <div style={{
-                    fontFamily: "'Times New Roman', serif",
-                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-                    color: '#2980b9',
-                    margin: '8px 0'
-                  }}>
-                    f = 1/T = (1/2π)√(g/L)
-                  </div>
-                </div>
-              </div>
-
-              {/* ข้อมูลการทดลอง */}
-              {experimentData.length > 0 ? (
-                <div style={{ marginBottom: '25px' }}>
-                  <h3 style={{
-                    color: '#2c3e50',
-                    borderBottom: '3px solid #3498db',
-                    paddingBottom: '8px',
-                    marginBottom: '15px',
-                    fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                    margin: '0 0 15px 0'
-                  }}>
-                    📈 ข้อมูลการทดลองจริง (Real-time Data)
-                  </h3>
-                  <p><strong>จำนวนจุดข้อมูล:</strong> {experimentData.length} จุด</p>
-                  <p><strong>ระยะเวลาการทดลอง:</strong> {experimentData.length > 0 ? experimentData[experimentData.length - 1].time.toFixed(2) : 0} วินาที</p>
-                  
-                  <table style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    margin: '15px 0',
-                    background: 'white',
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    boxShadow: '0 3px 8px rgba(0, 0, 0, 0.1)',
-                    fontSize: 'clamp(0.75rem, 2vw, 0.9rem)'
-                  }}>
-                    <thead>
-                      <tr>
-                        <th style={{
-                          background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                          color: 'white',
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          fontWeight: '600'
-                        }}>เวลา (s)</th>
-                        <th style={{
-                          background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                          color: 'white',
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          fontWeight: '600'
-                        }}>มุม (°)</th>
-                        <th style={{
-                          background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                          color: 'white',
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          fontWeight: '600'
-                        }}>ตำแหน่ง (m)</th>
-                        <th style={{
-                          background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                          color: 'white',
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          fontWeight: '600'
-                        }}>ความเร็ว (m/s)</th>
-                        <th style={{
-                          background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                          color: 'white',
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          fontWeight: '600'
-                        }}>ความเร่ง (m/s²)</th>
-                        <th style={{
-                          background: 'linear-gradient(135deg, #3498db, #2980b9)',
-                          color: 'white',
-                          padding: '10px 6px',
-                          textAlign: 'center',
-                          fontWeight: '600'
-                        }}>พลังงาน (J)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {experimentData
-                        .filter((_, index) => index % 5 === 0)
-                        .slice(0, 50)
-                        .map((data, index) => (
-                          <tr key={index} style={{
-                            backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white'
-                          }}>
-                            <td style={{
-                              padding: '8px 6px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid #eee'
-                            }}>
-                              {data.time.toFixed(3)}
-                            </td>
-                            <td style={{
-                              padding: '8px 6px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid #eee'
-                            }}>
-                              {data.angle.toFixed(2)}
-                            </td>
-                            <td style={{
-                              padding: '8px 6px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid #eee'
-                            }}>
-                              {data.position.toFixed(4)}
-                            </td>
-                            <td style={{
-                              padding: '8px 6px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid #eee'
-                            }}>
-                              {data.velocity.toFixed(4)}
-                            </td>
-                            <td style={{
-                              padding: '8px 6px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid #eee'
-                            }}>
-                              {data.acceleration.toFixed(4)}
-                            </td>
-                            <td style={{
-                              padding: '8px 6px',
-                              textAlign: 'center',
-                              borderBottom: '1px solid #eee'
-                            }}>
-                              {data.energy.toFixed(4)}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#666',
-                    marginTop: '10px'
-                  }}>
-                    <strong>หมายเหตุ:</strong> ตารางแสดงข้อมูลตัวอย่าง (ทุก 5 จุด) จากข้อมูลทั้งหมด {experimentData.length} จุด
-                    สำหรับข้อมูลครบถ้วน กรุณาคัดลอกรายงาน
-                  </p>
-                </div>
-              ) : (
-                <div style={{ marginBottom: '25px' }}>
-                  <h3 style={{
-                    color: '#2c3e50',
-                    borderBottom: '3px solid #3498db',
-                    paddingBottom: '8px',
-                    marginBottom: '15px',
-                    fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                    margin: '0 0 15px 0'
-                  }}>
-                    📈 ข้อมูลการทดลองจริง
-                  </h3>
-                  <p style={{
-                    color: '#666',
-                    fontStyle: 'italic'
-                  }}>
-                    ยังไม่มีข้อมูลการทดลอง กรุณาเริ่มการจำลองเพื่อบันทึกข้อมูล
-                  </p>
-                </div>
-              )}
-
-              {/* สรุปผลการทดลอง */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{
-                  color: '#2c3e50',
-                  borderBottom: '3px solid #3498db',
-                  paddingBottom: '8px',
-                  marginBottom: '15px',
-                  fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-                  margin: '0 0 15px 0'
-                }}>
-                  📝 สรุปผลการทดลอง
-                </h3>
-                <p><strong>วัตถุประสงค์:</strong> เพื่อศึกษาการเคลื่อนที่แบบฮาร์โมนิกอย่างง่ายของลูกตุ้ม และการหาค่าคาบการแกว่ง</p>
+            navigator.clipboard.writeText(reportText).then(() => {
+                alert('คัดลอกรายงานเรียบร้อยแล้ว!\nสามารถนำไปวางใน Microsoft Word ได้เลย');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = reportText;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
                 
-                <p><strong>หลักการ:</strong> การเคลื่อนที่แบบฮาร์โมนิกอย่างง่ายของลูกตุ้มเกิดขึ้นเมื่อแรงที่กระทำต่อลูกตุ้มแปรผันตรงกับการกระจัดเชิงมุม โดยมีสมการ F = -mgsinθ</p>
-                
-                <p><strong>ผลการทดลอง:</strong></p>
-                <ul style={{
-                  marginLeft: '20px',
-                  lineHeight: 1.8
-                }}>
-                  <li>คาบการแกว่ง: {pendulum.getTheoreticalPeriod().toFixed(3)} วินาที</li>
-                  <li>ความถี่ของการสั่น: {pendulum.getTheoreticalFrequency().toFixed(3)} Hz</li>
-                  <li>ความถี่เชิงมุม: {(2 * Math.PI * pendulum.getTheoreticalFrequency()).toFixed(3)} rad/s</li>
-                  <li>ความเร่งสูงสุด: {(gravity * Math.sin(angle * Math.PI / 180)).toFixed(3)} m/s²</li>
-                </ul>
-                
-                <p><strong>ข้อสังเกต:</strong></p>
-                <ul style={{
-                  marginLeft: '20px',
-                  lineHeight: 1.8
-                }}>
-                  <li>คาบการแกว่งของลูกตุ้มไม่ขึ้นอยู่กับมวลของลูกตุ้ม</li>
-                  <li>คาบการแกว่งจะเพิ่มขึ้นเมื่อความยาวของเชือกเพิ่มขึ้น</li>
-                  <li>คาบการแกว่งจะลดลงเมื่อแรงโน้มถ่วงโลกเพิ่มขึ้น</li>
-                  <li>สำหรับมุมเล็ก (&lt; 15°) สมการ T = 2π√(L/g) ใช้ได้อย่างแม่นยำ</li>
-                </ul>
-                
-                <p><strong>สรุป:</strong> การทดลองแสดงให้เห็นว่าการเคลื่อนที่ของลูกตุ้มเป็นไปตามทฤษฎีการเคลื่อนที่แบบฮาร์โมนิกอย่างง่าย โดยคาบการแกว่งขึ้นอยู่กับความยาวของสายและแรงโน้มถ่วงเท่านั้น ไม่ขึ้นอยู่กับมวลของลูกตุ้ม</p>
-              </div>
+                if (success) {
+                    alert('คัดลอกรายงานเรียบร้อยแล้ว!\nสามารถนำไปวางใน Microsoft Word ได้เลย');
+                } else {
+                    alert('ไม่สามารถคัดลอกได้ กรุณาลองใหม่อีกครั้ง');
+                }
+            });
+        }
 
-              <div style={{
-                textAlign: 'center',
-                marginTop: '25px',
-                paddingTop: '15px',
-                borderTop: '2px solid #eee'
-              }}>
-                <button
-                  style={{
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: 'clamp(14px, 2.5vw, 16px)',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    margin: '5px',
-                    background: 'linear-gradient(135deg, #f39c12, #e67e22)',
-                    color: 'white',
-                    touchAction: 'manipulation'
-                  }}
-                  onClick={copyReportData}
-                >
-                  📋 คัดลอกรายงาน
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        // Modal controls
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('reportModal').classList.remove('show');
+        });
 
-export default PendulumLab;
+        // Click outside modal to close
+        document.getElementById('reportModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('show');
+            }
+        });
+
+        // Initialize
+        updateResults();
+        updateDisplay();
+        drawPendulum();
+    </script>
+</body>
+</html>
