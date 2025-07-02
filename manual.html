@@ -1,0 +1,832 @@
+<div class="access-section">
+                <div class="access-info" style="text-align: center;">
+                    <div class="access-title">🌐 เข้าถึงสื่อการเรียนรู้</div>
+                    <div class="access-url">https://khajonsee.github.io/Physics-simulation/</div>
+                    <div class="access-note">
+                        • ใช้งานได้ทุกอุปกรณ์ผ่านเว็บเบราว์เซอร์<br>
+                        • รองรับ Chrome, Firefox, Safari, Edge<br>
+                        • ไม่ต้องติดตั้งโปรแกรมเพิ่มเติม
+                    </div>
+                    <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #cbd5e1;">
+                        <div style="font-size: 12px; font-weight: 600; color: #4338ca; margin-bottom: 8px;">📚 คู่มือเพิ่มเติม</div>
+                        <div style="font-size: 10px; color: #374151; line-height: 1.4;">
+                            🕰️ <strong>คู่มือลูกตุ้ม:</strong><br>
+                            <a href="https://drive.google.com/file/d/1Xs1c8uFh_CoJKcxP6saxNLe3swNsuMJF/view?usp=sharing" style="color: #6366f1; text-decoration: none;">https://drive.google.com/file/d/1Xs1c8uFh_CoJKcxP6saxNLe3swNsuMJF/view?usp=sharing</a><br><br>
+                            🔩 <strong>คู่มือสปริง:</strong><br>
+                            <a href="https://drive.google.com/file/d/1amwSM3Fbes36cGN7m1LtZlsycf9lENI3/view?usp=sharing" style="color: #6366f1; text-decoration: none;">https://drive.google.com/file/d/1amwSM3Fbes36cGN7m1LtZlsycf9lENI3/view?usp=sharing</a>
+                        </div>
+                    </div>
+                </div>
+            </div><!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คู่มือการใช้สื่อจำลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            margin: 0;
+        }
+        
+        .page {
+            width: 210mm;
+            height: 297mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            page-break-after: always;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            padding: 15px 20px;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="20" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="15" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="25" r="1.2" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header p {
+            font-size: 14px;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .content {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: calc(100% - 100px);
+            overflow-y: auto;
+        }
+        
+        .section {
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 12px;
+            border-left: 4px solid #4F46E5;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        .objectives {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .objectives-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+        
+        .objectives-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .objective-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #065f46;
+        }
+        
+        .objective-icon {
+            width: 16px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+        
+        .steps-section {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .steps-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+        
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .step {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: #f59e0b;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .step-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 3px;
+        }
+        
+        .step-desc {
+            font-size: 10px;
+            color: #78716c;
+            line-height: 1.3;
+        }
+        
+        .models-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .model {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            border: 2px solid #e2e8f0;
+        }
+        
+        .model-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 24px;
+            color: white;
+        }
+        
+        .model-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .model-params {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        
+        .access-section {
+            background: linear-gradient(135deg, #f0f9ff, #e0e7ff);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px dashed #4F46E5;
+        }
+        
+        .qr-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            background: #1e293b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .access-info {
+            text-align: left;
+        }
+        
+        .access-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4F46E5;
+            margin-bottom: 6px;
+        }
+        
+        .access-url {
+            font-size: 11px;
+            color: #64748b;
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        
+        .access-note {
+            font-size: 10px;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        .footer {
+            background: #1e293b;
+            padding: 12px;
+            color: white;
+            text-align: center;
+            margin-top: auto;
+        }
+        
+        .footer p {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        /* Page 2 Styles */
+        .controls-section {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .controls-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #dc2626;
+            margin-bottom: 12px;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .control-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .control-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #dc2626;
+            margin-bottom: 4px;
+        }
+        
+        .control-desc {
+            font-size: 10px;
+            color: #78716c;
+            line-height: 1.3;
+        }
+        
+        .teaching-section {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .teaching-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #059669;
+            margin-bottom: 12px;
+        }
+        
+        .teaching-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        
+        .teaching-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .teaching-number {
+            width: 18px;
+            height: 18px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        
+        .teaching-text {
+            font-size: 11px;
+            color: #374151;
+            line-height: 1.3;
+        }
+        
+        .assessment-section {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .assessment-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+        
+        .assessment-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .assessment-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .assessment-icon {
+            width: 32px;
+            height: 32px;
+            background: #f59e0b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin: 0 auto 8px;
+            font-size: 14px;
+        }
+        
+        .assessment-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 4px;
+        }
+        
+        .assessment-desc {
+            font-size: 10px;
+            color: #78716c;
+            line-height: 1.3;
+        }
+        
+        .formulas-section {
+            background: linear-gradient(135deg, #f0f9ff, #e0e7ff);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #6366f1;
+        }
+        
+        .formulas-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4338ca;
+            margin-bottom: 12px;
+        }
+        
+        .formulas-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .formula-category {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .formula-cat-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4338ca;
+            margin-bottom: 8px;
+        }
+        
+        .formula-item {
+            font-size: 10px;
+            color: #374151;
+            margin-bottom: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page 1 -->
+    <div class="page">
+        <div class="header">
+            <h1>🔬 คู่มือการใช้สื่อจำลองการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</h1>
+            <p>ระบบจำลองลูกตุ้มและสปริง | วิชาฟิสิกส์ 3 ชั้นมัธยมศึกษาปีที่ 5 | OBEC Content Center</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="section-title">📋 ข้อมูลเบื้องต้นของสื่อ</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">ชื่อสื่อ</div>
+                        <div class="info-value">การเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">กลุ่มสาระ</div>
+                        <div class="info-value">วิทยาศาสตร์และเทคโนโลยี</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ระดับชั้น</div>
+                        <div class="info-value">มัธยมศึกษาปีที่ 4-6</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">เวลา</div>
+                        <div class="info-value">2 คาบ (100 นาที)</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">ผู้พัฒนา</div>
+                        <div class="info-value">นางสาวขจรศรี สุทธสังข์</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">โรงเรียน</div>
+                        <div class="info-value">โรงเรียนลองวิทยา จ.แพร่</div>
+                    </div>
+                </div>
+                
+                <div class="objectives">
+                    <div class="objectives-title">🎯 จุดประสงค์การเรียนรู้</div>
+                    <div class="objectives-list">
+                        <div class="objective-item">
+                            <div class="objective-icon">✓</div>
+                            <div>เข้าใจการเคลื่อนที่แบบ SHM</div>
+                        </div>
+                        <div class="objective-item">
+                            <div class="objective-icon">✓</div>
+                            <div>วิเคราะห์ตัวแปรและความสัมพันธ์</div>
+                        </div>
+                        <div class="objective-item">
+                            <div class="objective-icon">✓</div>
+                            <div>เชื่อมโยงทฤษฎีกับปฏิบัติ</div>
+                        </div>
+                        <div class="objective-item">
+                            <div class="objective-icon">✓</div>
+                            <div>ประยุกต์ใช้ในชีวิตจริง</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">🚀 ขั้นตอนการใช้สื่อเทคโนโลยีดิจิทัล</div>
+                <div class="steps-section">
+                    <div class="steps-title">การเริ่มต้นใช้งาน</div>
+                    <div class="steps-grid">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-title">เข้าถึงสื่อ</div>
+                            <div class="step-desc">สแกน QR Code หรือเข้า URL</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-title">กรอกข้อมูล</div>
+                            <div class="step-desc">ใส่ชื่อ ระดับชั้น เลขที่</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-title">เลือกโมเดล</div>
+                            <div class="step-desc">เลือกลูกตุ้มหรือสปริง</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-title">ตั้งค่า</div>
+                            <div class="step-desc">ปรับพารามิเตอร์ด้วย Slider</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-title">เริ่มจำลอง</div>
+                            <div class="step-desc">กดเริ่ม สังเกตการเคลื่อนที่</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">6</div>
+                            <div class="step-title">บันทึกผล</div>
+                            <div class="step-desc">สร้างรายงาน Export ข้อมูล</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">⚙️ ระบบจำลอง 2 ประเภท</div>
+                <div class="models-section">
+                    <div class="model">
+                        <div class="model-icon">🕰️</div>
+                        <div class="model-title">ลูกตุ้ม (Pendulum)</div>
+                        <div class="model-params">
+                            • ความยาวสาย (L): 0.5-2.0 m<br>
+                            • มุมเริ่มต้น (θ₀): 5°-45°<br>
+                            • แรงโน้มถ่วง (g): 5-15 N/kg<br>
+                            • มวล (m): 0.1-2.0 kg<br>
+                            • สูตร: T = 2π√(L/g)
+                        </div>
+                    </div>
+                    <div class="model">
+                        <div class="model-icon">🔩</div>
+                        <div class="model-title">สปริง (Spring)</div>
+                        <div class="model-params">
+                            • มวล (m): 0.1-5.0 kg<br>
+                            • ค่าคงที่สปริง (k): 1-50 N/m<br>
+                            • แอมพลิจูด (A): 0.1-2.0 m<br>
+                            • ความเร็วจำลอง: ปรับได้<br>
+                            • สูตร: T = 2π√(m/k)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+        </div>
+        
+        <div class="footer">
+            <p>พัฒนาโดย นางสาวขจรศรี สุทธสังข์ | โรงเรียนลองวิทยา จังหวัดแพร่ | ระบบ OBEC Content Center 2568</p>
+        </div>
+    </div>
+    
+    <!-- Page 2 -->
+    <div class="page">
+        <div class="header">
+            <h1>🎮 แนวทางการใช้สื่อในชั้นเรียนและการวัดประเมินผล</h1>
+            <p>คำแนะนำการจัดการเรียนรู้เชิงรุกและเทคนิคการประเมินผล</p>
+        </div>
+        
+        <div class="content">
+            <div class="controls-section">
+                <div class="controls-title">🎛️ การควบคุมและการแสดงผล</div>
+                <div class="controls-grid">
+                    <div class="control-item">
+                        <div class="control-label">📊 ข้อมูล Real-time</div>
+                        <div class="control-desc">ตำแหน่ง (x), ความเร็ว (v), ความเร่ง (a) แสดงผลทันที</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-label">⚡ ผลการคำนวณ</div>
+                        <div class="control-desc">ความถี่ (f), คาบ (T), ความเร็วสูงสุด, ความเร่งสูงสุด</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-label">🎮 ปุ่มควบคุม</div>
+                        <div class="control-desc">เริ่ม, หยุด, รีเซ็ต และปรับความเร็วการจำลอง</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-label">📋 ระบบรายงาน</div>
+                        <div class="control-desc">สร้างรายงานอัตโนมัติ คัดลอกข้อมูล Export</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="teaching-section">
+                <div class="teaching-title">👩‍🏫 แนวทางการใช้ในชั้นเรียน (Active Learning)</div>
+                <div class="teaching-steps">
+                    <div class="teaching-step">
+                        <div class="teaching-number">1</div>
+                        <div class="teaching-text"><strong>Pre-Activity:</strong> ให้นักเรียนทำการทดลองจริงกับลูกตุ้มก่อน เพื่อเปรียบเทียบกับการจำลอง</div>
+                    </div>
+                    <div class="teaching-step">
+                        <div class="teaching-number">2</div>
+                        <div class="teaching-text"><strong>Individual Work:</strong> ให้นักเรียนใช้สื่อเป็นรายบุคคล (2-3 คน/กลุ่ม) ปรับพารามิเตอร์และสังเกตผล</div>
+                    </div>
+                    <div class="teaching-step">
+                        <div class="teaching-number">3</div>
+                        <div class="teaching-text"><strong>Data Analysis:</strong> ให้นักเรียนเปรียบเทียบข้อมูลจากการทดลองจริงกับการจำลอง วิเคราะห์ความแตกต่าง</div>
+                    </div>
+                    <div class="teaching-step">
+                        <div class="teaching-number">4</div>
+                        <div class="teaching-text"><strong>Group Discussion:</strong> จัดกิจกรรมอภิปรายผลการทดลองและทำความเข้าใจร่วมกัน</div>
+                    </div>
+                    <div class="teaching-step">
+                        <div class="teaching-number">5</div>
+                        <div class="teaching-text"><strong>Report Writing:</strong> ให้นักเรียนใช้ระบบสร้างรายงานและเขียนข้อสรุปของตนเอง</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="assessment-section">
+                <div class="assessment-title">📊 การวัดและประเมินผล</div>
+                <div class="assessment-grid">
+                    <div class="assessment-item">
+                        <div class="assessment-icon">👀</div>
+                        <div class="assessment-label">การสังเกต (30%)</div>
+                        <div class="assessment-desc">การมีส่วนร่วม การใช้โปรแกรม การทำงานทีม</div>
+                    </div>
+                    <div class="assessment-item">
+                        <div class="assessment-icon">💬</div>
+                        <div class="assessment-label">การตอบคำถาม (20%)</div>
+                        <div class="assessment-desc">ความถูกต้อง การอธิบายผลการทดลอง</div>
+                    </div>
+                    <div class="assessment-item">
+                        <div class="assessment-icon">📝</div>
+                        <div class="assessment-label">รายงานการทดลอง (30%)</div>
+                        <div class="assessment-desc">ความครบถ้วน การวิเคราะห์ การนำเสนอ</div>
+                    </div>
+                    <div class="assessment-item">
+                        <div class="assessment-icon">📋</div>
+                        <div class="assessment-label">ทดสอบความเข้าใจ (20%)</div>
+                        <div class="assessment-desc">การประยุกต์ความรู้ การแก้ปัญหา</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="formulas-section" style="margin-bottom: 20px;">
+                <div class="formulas-title">🧮 สมการสำคัญที่ต้องจำ</div>
+                <div class="formulas-grid">
+                    <div class="formula-category">
+                        <div class="formula-cat-title">ลูกตุ้ม (Pendulum)</div>
+                        <div class="formula-item">• คาบ: T = 2π√(L/g)</div>
+                        <div class="formula-item">• ความถี่: f = (1/2π)√(g/L)</div>
+                        <div class="formula-item">• ความถี่เชิงมุม: ω = √(g/L)</div>
+                        <div class="formula-item">• ไม่ขึ้นกับมวลและแอมพลิจูด</div>
+                    </div>
+                    <div class="formula-category">
+                        <div class="formula-cat-title">สปริง (Spring)</div>
+                        <div class="formula-item">• คาบ: T = 2π√(m/k)</div>
+                        <div class="formula-item">• ความถี่: f = (1/2π)√(k/m)</div>
+                        <div class="formula-item">• ความถี่เชิงมุม: ω = √(k/m)</div>
+                        <div class="formula-item">• แรงคืนตัว: F = -kx</div>
+                    </div>
+                    <div class="formula-category">
+                        <div class="formula-cat-title">การเคลื่อนที่ SHM</div>
+                        <div class="formula-item">• ตำแหน่ง: x(t) = A cos(ωt + φ)</div>
+                        <div class="formula-item">• ความเร็ว: v(t) = -Aω sin(ωt + φ)</div>
+                        <div class="formula-item">• ความเร่ง: a(t) = -Aω² cos(ωt + φ)</div>
+                        <div class="formula-item">• vmax = ωA, amax = ω²A</div>
+                    </div>
+                    <div class="formula-category">
+                        <div class="formula-cat-title">ค่าคงที่สำคัญ</div>
+                        <div class="formula-item">• g (โลก) = 9.81 m/s²</div>
+                        <div class="formula-item">• g (ดวงจันทร์) = 1.6 m/s²</div>
+                        <div class="formula-item">• g (ดาวอังคาร) = 3.7 m/s²</div>
+                        <div class="formula-item">• π ≈ 3.14159</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #e0e7ff, #c7d2fe); padding: 18px; border-radius: 12px; border: 2px dashed #6366f1;">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #4338ca; margin-bottom: 8px;">
+                        📞 ติดต่อสอบถามและขอคำแนะนำ
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; font-weight: 600; color: #4338ca; margin-bottom: 6px;">👩‍🏫 ผู้พัฒนา</div>
+                        <div style="font-size: 11px; color: #374151; line-height: 1.4;">
+                            <strong>นางสาวขจรศรี สุทธสังข์</strong><br>
+                            ครู วิทยฐานะครูชำนาญการพิเศษ<br>
+                            📱 065-3299891
+                        </div>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; font-weight: 600; color: #4338ca; margin-bottom: 6px;">🏫 สถานศึกษา</div>
+                        <div style="font-size: 11px; color: #374151; line-height: 1.4;">
+                            <strong>โรงเรียนลองวิทยา</strong><br>
+                            อำเภอลอง จังหวัดแพร่<br>
+                            📞 054-581439<br>
+                            🌐 OBEC Content Center
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <div style="font-size: 10px; color: #6b7280; font-style: italic;">
+                        💡 เทคนิคการใช้ AI ในการพัฒนา • การเปรียบเทียบกับสื่อจำลองอื่น • แนวทางการประยุกต์ใช้
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2568 โรงเรียนลองวิทยา | สื่อการเรียนรู้ภายใต้ CC BY-NC-SA 4.0 | พัฒนาด้วย Claude AI | Best Practice Award</p>
+        </div>
+    </div>
+</body>
+</html>
